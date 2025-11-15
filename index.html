@@ -119,89 +119,147 @@
   </footer>
 
   <script>
-    const itemsBody = document.getElementById("itemsBody");
-    const addRowBtn = document.getElementById("addRowBtn");
-    const recalcBtn = document.getElementById("recalcBtn");
+    <script>
+  const itemsBody = document.getElementById("itemsBody");
+  const addRowBtn = document.getElementById("addRowBtn");
+  const recalcBtn = document.getElementById("recalcBtn");
 
-    const totalEmissionsDisplay = document.getElementById("totalEmissionsDisplay");
-    const creditsDisplay = document.getElementById("creditsDisplay");
-    const netEmissionsDisplay = document.getElementById("netEmissionsDisplay");
-    const offsetPctDisplay = document.getElementById("offsetPctDisplay");
-    const offsetCostDisplay = document.getElementById("offsetCostDisplay");
+  const totalEmissionsDisplay = document.getElementById("totalEmissionsDisplay");
+  const creditsDisplay = document.getElementById("creditsDisplay");
+  const netEmissionsDisplay = document.getElementById("netEmissionsDisplay");
+  const offsetPctDisplay = document.getElementById("offsetPctDisplay");
+  const offsetCostDisplay = document.getElementById("offsetCostDisplay");
 
-    const carbonPriceInput = document.getElementById("carbonPrice");
-    const creditsPurchasedInput = document.getElementById("creditsPurchased");
+  const carbonPriceInput = document.getElementById("carbonPrice");
+  const creditsPurchasedInput = document.getElementById("creditsPurchased");
 
-    function addRow() {
-      const tr = document.createElement("tr");
-      tr.className = "border-t";
+  // ✅ Default prefilled data with common emission factors
+  const DEFAULT_ROWS = [
+    {
+      category: "Materials",
+      item: "Cement (OPC)",
+      qty: 10000,
+      unit: "kg",
+      ef: 0.85, // kgCO2e per kg
+    },
+    {
+      category: "Energy",
+      item: "Grid Electricity",
+      qty: 5000,
+      unit: "kWh",
+      ef: 0.4, // kgCO2e per kWh
+    },
+    {
+      category: "Transport",
+      item: "Diesel (Truck Fuel)",
+      qty: 1000,
+      unit: "L",
+      ef: 2.68, // kgCO2e per litre
+    },
+  ];
 
-      tr.innerHTML = `
-        <td class="py-2">
-          <select class="border rounded-xl px-2 py-1 w-full text-xs">
-            <option>Materials</option>
-            <option>Machinery</option>
-            <option>Transport</option>
-            <option>Energy</option>
-          </select>
-        </td>
-        <td><input class="border rounded-xl px-2 py-1 w-full text-xs" placeholder="e.g., Cement" /></td>
-        <td><input type="number" class="border rounded-xl px-2 py-1 w-20 text-xs" value="0" /></td>
-        <td><input class="border rounded-xl px-2 py-1 w-20 text-xs" value="kg" /></td>
-        <td><input type="number" class="border rounded-xl px-2 py-1 w-24 text-xs" value="0" /></td>
-        <td class="text-right font-medium text-xs align-middle"><span class="inline-block w-[70px]">0.000</span></td>
-        <td class="text-right"><button class="text-red-600 text-xs border px-2 py-1 rounded-lg">Delete</button></td>
-      `;
+  function addRow(prefill = {}) {
+    const tr = document.createElement("tr");
+    tr.className = "border-t";
 
-      tr.querySelector("button").addEventListener("click", () => {
-        tr.remove();
-        recalc();
-      });
+    tr.innerHTML = `
+      <td class="py-2">
+        <select class="border rounded-xl px-2 py-1 w-full text-xs">
+          <option ${prefill.category === "Materials" ? "selected" : ""}>Materials</option>
+          <option ${prefill.category === "Machinery" ? "selected" : ""}>Machinery</option>
+          <option ${prefill.category === "Transport" ? "selected" : ""}>Transport</option>
+          <option ${prefill.category === "Energy" ? "selected" : ""}>Energy</option>
+        </select>
+      </td>
 
-      itemsBody.appendChild(tr);
-    }
+      <td>
+        <input class="border rounded-xl px-2 py-1 w-full text-xs"
+               value="${prefill.item || ""}"
+               placeholder="e.g., Cement" />
+      </td>
 
-    function getRows() {
-      return [...itemsBody.querySelectorAll("tr")].map((tr) => {
-        const tds = tr.querySelectorAll("td");
-        return {
-          qty: parseFloat(tds[2].querySelector("input").value),
-          ef: parseFloat(tds[4].querySelector("input").value),
-          cell: tds[5].querySelector("span"),
-        };
-      });
-    }
+      <td>
+        <input type="number"
+               class="border rounded-xl px-2 py-1 w-20 text-xs"
+               value="${prefill.qty ?? 0}" />
+      </td>
 
-    function recalc() {
-      let total = 0;
-      const rows = getRows();
+      <td>
+        <input class="border rounded-xl px-2 py-1 w-20 text-xs"
+               value="${prefill.unit || "kg"}" />
+      </td>
 
-      rows.forEach((r) => {
-        const t = (r.qty * r.ef) / 1000;
-        r.cell.textContent = t.toFixed(3);
-        total += t;
-      });
+      <td>
+        <input type="number"
+               class="border rounded-xl px-2 py-1 w-24 text-xs"
+               value="${prefill.ef ?? 0}" />
+      </td>
 
-      const credits = parseFloat(creditsPurchasedInput.value || 0);
-      const price = parseFloat(carbonPriceInput.value || 0);
+      <td class="text-right font-medium text-xs align-middle">
+        <span class="inline-block w-[70px]">0.000</span>
+      </td>
 
-      const net = Math.max(total - credits, 0);
-      const pct = total ? (credits / total) * 100 : 0;
-      const cost = net * price;
+      <td class="text-right">
+        <button class="text-red-600 text-xs border px-2 py-1 rounded-lg">Delete</button>
+      </td>
+    `;
 
-      totalEmissionsDisplay.textContent = total.toFixed(3) + " tCO₂e";
-      creditsDisplay.textContent = credits.toFixed(3) + " tCO₂e";
-      netEmissionsDisplay.textContent = net.toFixed(3) + " tCO₂e";
-      offsetPctDisplay.textContent = pct.toFixed(1) + "%";
-      offsetCostDisplay.textContent = "$" + cost.toFixed(2);
-    }
+    tr.querySelector("button").addEventListener("click", () => {
+      tr.remove();
+      recalc();
+    });
 
-    addRow();
-    addRow();
-    recalc();
+    itemsBody.appendChild(tr);
+  }
 
-    addRowBtn.addEventListener("click", addRow);
-    recalcBtn.addEventListener("click", recalc);
+  function getRows() {
+    return [...itemsBody.querySelectorAll("tr")].map((tr) => {
+      const tds = tr.querySelectorAll("td");
+      return {
+        qty: parseFloat(tds[2].querySelector("input").value) || 0,
+        ef: parseFloat(tds[4].querySelector("input").value) || 0,
+        cell: tds[5].querySelector("span"),
+      };
+    });
+  }
+
+  function recalc() {
+    let total = 0;
+    const rows = getRows();
+
+    rows.forEach((r) => {
+      const t = (r.qty * r.ef) / 1000; // kg → tonnes
+      r.cell.textContent = t.toFixed(3);
+      total += t;
+    });
+
+    const credits = parseFloat(creditsPurchasedInput.value || "0");
+    const price = parseFloat(carbonPriceInput.value || "0");
+
+    const net = Math.max(total - credits, 0);
+    const pct = total ? (credits / total) * 100 : 0;
+    const cost = net * price;
+
+    totalEmissionsDisplay.textContent = total.toFixed(3) + " tCO₂e";
+    creditsDisplay.textContent = credits.toFixed(3) + " tCO₂e";
+    netEmissionsDisplay.textContent = net.toFixed(3) + " tCO₂e";
+    offsetPctDisplay.textContent = pct.toFixed(1) + "%";
+    offsetCostDisplay.textContent = "$" + cost.toFixed(2);
+  }
+
+  // 🟢 Insert sample rows automatically at page load
+  DEFAULT_ROWS.forEach((row) => addRow(row));
+  recalc();
+
+  // Buttons
+  addRowBtn.addEventListener("click", () => addRow());
+  recalcBtn.addEventListener("click", recalc);
+
+  // Auto recalc on input changes
+  creditsPurchasedInput.addEventListener("input", recalc);
+  carbonPriceInput.addEventListener("input", recalc);
+</script>
+
   </script>
 </body>
 </html>
