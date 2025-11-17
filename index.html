@@ -258,63 +258,93 @@
     creditsPurchasedInput.addEventListener("input", recalc);
     carbonPriceInput.addEventListener("input", recalc);
 
-    // ---- Helper: project data collect karo ----
-    function collectProjectDataForAI() {
-      // Project name input
-      const projectNameInput =
-        document.getElementById("projectName") ||
-        document.querySelector("input[placeholder='Campus Block A']") ||
-        document.querySelector("input");
+// ---- Helper: project data collect karo ----
+function collectProjectDataForAI() {
+  // Project name input
+  const projectNameInput =
+    document.getElementById("projectName") ||
+    document.querySelector("input[placeholder='UAB Campus Block A']") ||
+    document.querySelector("input");
 
-      const projectName =
-        (projectNameInput && projectNameInput.value.trim()) ||
-        "Untitled Project";
+  const projectName =
+    (projectNameInput && projectNameInput.value.trim()) ||
+    "Untitled Project";
 
-      // Total emissions card se number nikaalna
-      const totalEl =
-        document.getElementById("totalEmissionsValue") ||
-        document.querySelector("[data-total-emissions]");
-      let totalEmissions = 0;
+  // ==== Total emissions card se number nikaalna ====
+  const totalEl =
+    document.querySelector(".total-emissions-value") ||   // new class
+    document.getElementById("totalEmissionsValue") ||     // fallback
+    document.querySelector("[data-total-emissions]");     // fallback
 
-      if (totalEl) {
-        const text = totalEl.innerText || totalEl.textContent || "";
-        const match = text.replace(",", "").match(/[\d.]+/);
-        if (match) totalEmissions = parseFloat(match[0]) || 0;
-      }
+  let totalEmissions = 0;
 
-      // Emission line items rows
-      const rows =
-        document.querySelectorAll("tbody tr") ||
-        document.querySelectorAll(".emission-row");
-
-      const items = [];
-
-      rows.forEach((row) => {
-        const categoryEl = row.querySelector(".category-select, select");
-        const itemEl = row.querySelector(".item-input, input[type='text']");
-        const qtyEl = row.querySelector(".qty-input, input[type='number']");
-        const unitEl = row.querySelector(".unit-input, select.unit-select");
-        const efEl = row.querySelector(".ef-input, input[data-ef]");
-        const emisEl = row.querySelector(".emissions-cell");
-
-        const category = categoryEl ? categoryEl.value || categoryEl.textContent : "";
-        const item = itemEl ? itemEl.value || itemEl.textContent : "";
-        const quantity = qtyEl ? parseFloat(qtyEl.value) || 0 : 0;
-        const unit = unitEl ? unitEl.value || unitEl.textContent : "";
-        const ef = efEl ? parseFloat(efEl.value) || 0 : 0;
-        const emissions = emisEl
-          ? parseFloat(
-              (emisEl.innerText || emisEl.textContent || "0").replace(",", "")
-            ) || 0
-          : 0;
-
-        if (category || item || quantity || emissions) {
-          items.push({ category, item, quantity, unit, ef, emissions });
-        }
-      });
-
-      return { projectName, totalEmissions, items };
+  if (totalEl) {
+    const text = (totalEl.innerText || totalEl.textContent || "").trim();
+    const numMatch = text.replace(/,/g, "").match(/[\d.]+/);
+    if (numMatch) {
+      totalEmissions = parseFloat(numMatch[0]);
     }
+  }
+
+  // ==== Emission line items table read karna ====
+  const rows =
+    document.querySelectorAll("tbody tr") ||
+    document.querySelectorAll(".emission-row");
+
+  const items = [];
+
+  rows.forEach((row) => {
+    const cells = row.querySelectorAll("td");
+    if (!cells.length) return;
+
+    const category =
+      cells[0].querySelector("select")?.value ||
+      cells[0].innerText.trim() ||
+      "";
+
+    const itemName =
+      cells[1].querySelector("input")?.value ||
+      cells[1].innerText.trim() ||
+      "";
+
+    const quantity =
+      parseFloat(
+        (cells[2].querySelector("input")?.value || "")
+          .replace(/,/g, "")
+      ) || 0;
+
+    const unit =
+      cells[3].querySelector("select")?.value ||
+      cells[3].innerText.trim() ||
+      "";
+
+    const ef =
+      parseFloat(
+        (cells[4].querySelector("input")?.value || "")
+          .replace(/,/g, "")
+      ) || 0;
+
+    const emissions =
+      parseFloat(
+        (cells[5].innerText || cells[5].textContent || "")
+          .replace(/,/g, "")
+          .replace(/tCO2e?/i, "")
+      ) || 0;
+
+    if (!category && !itemName) return;
+
+    items.push({
+      category,
+      item: itemName,
+      quantity,
+      unit,
+      ef,
+      emissions,
+    });
+  });
+
+  return { projectName, totalEmissions, items };
+}
 
     // ---- AI insights render helper ----
     function renderAIInsights(insights) {
