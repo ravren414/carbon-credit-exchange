@@ -51,6 +51,26 @@ Rules:
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        const completion = await openai.chat.completions.create({
+  model: "gpt-4.1-mini",
+  messages: [
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: prompt },
+  ],
+});
+
+const raw = completion.choices[0]?.message?.content || "";
+let insights;
+
+try {
+  insights = JSON.parse(raw);
+} catch (e) {
+  console.error("JSON parse error:", e, raw);
+  insights = { summary: raw };
+}
+
+return res.status(200).json({ ok: true, insights });
+
       },
       body: JSON.stringify({
         model: "gpt-4.1-mini",
