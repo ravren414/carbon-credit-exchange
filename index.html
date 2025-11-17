@@ -246,317 +246,235 @@
     offsetCostDisplay.textContent = "$" + cost.toFixed(2);
   }
 
-  // 🟢 Insert sample rows automatically at page load
-  DEFAULT_ROWS.forEach((row) => addRow(row));
-  recalc();
+    // Insert sample rows automatically at page load
+    DEFAULT_ROWS.forEach((row) => addRow(row));
+    recalc();
 
-  // Buttons
-  addRowBtn.addEventListener("click", () => addRow());
-  recalcBtn.addEventListener("click", recalc);
+    // Buttons
+    addRowBtn.addEventListener("click", () => addRow({}));
+    recalcBtn.addEventListener("click", recalc);
 
-  // Auto recalc on input changes
-  creditsPurchasedInput.addEventListener("input", recalc);
-  carbonPriceInput.addEventListener("input", recalc);
+    // Auto recalc on input changes
+    creditsPurchasedInput.addEventListener("input", recalc);
+    carbonPriceInput.addEventListener("input", recalc);
 
-  // ---- Helper: project data collect karo ----
-  function collectProjectDataForAI() {
-    // Project name input ka ID agar alag ho to yahan change kar sakta hai
-    const projectNameInput =
-      document.getElementById("projectName") ||
-      document.querySelector('input[placeholder*="Campus Block"]') ||
-      document.querySelector("input");
+    // ---- Helper: project data collect karo ----
+    function collectProjectDataForAI() {
+      // Project name input
+      const projectNameInput =
+        document.getElementById("projectName") ||
+        document.querySelector("input[placeholder='Campus Block A']") ||
+        document.querySelector("input");
 
-    const projectName = projectNameInput?.value?.trim() || "Untitled Project";
+      const projectName =
+        (projectNameInput && projectNameInput.value.trim()) ||
+        "Untitled Project";
 
-    // Total emissions card se number nikaalna
-    // Example: "13.180 tCO2e" -> 13.18
-    const totalEl =
-      document.getElementById("totalEmissionsValue") ||
-      document.querySelector('[data-total-emissions]');
-    let totalEmissions = 0;
+      // Total emissions card se number nikaalna
+      const totalEl =
+        document.getElementById("totalEmissionsValue") ||
+        document.querySelector("[data-total-emissions]");
+      let totalEmissions = 0;
 
-    if (totalEl) {
-      const numMatch = (totalEl.innerText || totalEl.textContent || "")
-        .replace(",", "")
-        .match(/[0-9.]+/);
-      if (numMatch) {
-        totalEmissions = parseFloat(numMatch[0]) || 0;
+      if (totalEl) {
+        const text = totalEl.innerText || totalEl.textContent || "";
+        const match = text.replace(",", "").match(/[\d.]+/);
+        if (match) totalEmissions = parseFloat(match[0]) || 0;
+      }
+
+      // Emission line items rows
+      const rows =
+        document.querySelectorAll("tbody tr") ||
+        document.querySelectorAll(".emission-row");
+
+      const items = [];
+
+      rows.forEach((row) => {
+        const categoryEl = row.querySelector(".category-select, select");
+        const itemEl = row.querySelector(".item-input, input[type='text']");
+        const qtyEl = row.querySelector(".qty-input, input[type='number']");
+        const unitEl = row.querySelector(".unit-input, select.unit-select");
+        const efEl = row.querySelector(".ef-input, input[data-ef]");
+        const emisEl = row.querySelector(".emissions-cell");
+
+        const category = categoryEl ? categoryEl.value || categoryEl.textContent : "";
+        const item = itemEl ? itemEl.value || itemEl.textContent : "";
+        const quantity = qtyEl ? parseFloat(qtyEl.value) || 0 : 0;
+        const unit = unitEl ? unitEl.value || unitEl.textContent : "";
+        const ef = efEl ? parseFloat(efEl.value) || 0 : 0;
+        const emissions = emisEl
+          ? parseFloat(
+              (emisEl.innerText || emisEl.textContent || "0").replace(",", "")
+            ) || 0
+          : 0;
+
+        if (category || item || quantity || emissions) {
+          items.push({ category, item, quantity, unit, ef, emissions });
+        }
+      });
+
+      return { projectName, totalEmissions, items };
+    }
+
+    // ---- AI insights render helper ----
+    function renderAIInsights(insights) {
+      const loadingEl = document.getElementById("ai-loading");
+      const errorEl = document.getElementById("ai-error");
+      const wrapperEl = document.getElementById("ai-insights-wrapper");
+      const summaryEl = document.getElementById("ai-summary");
+      const scoreTextEl = document.getElementById("ai-score-text");
+      const scoreBarEl = document.getElementById("ai-score-bar");
+      const extraListEl = document.getElementById("ai-extra");
+      const reportEl = document.getElementById("ai-report");
+
+      if (!insights) insights = {};
+
+      if (loadingEl) loadingEl.classList.add("hidden");
+      if (errorEl) errorEl.classList.add("hidden");
+      if (wrapperEl) wrapperEl.classList.remove("hidden");
+
+      if (summaryEl && insights.summary) summaryEl.textContent = insights.summary;
+
+      if (scoreTextEl && typeof insights.score === "number") {
+        scoreTextEl.textContent = `${insights.score} / 100`;
+      }
+
+      if (scoreBarEl && typeof insights.score === "number") {
+        const clamped = Math.max(0, Math.min(100, insights.score));
+        scoreBarEl.style.width = `${clamped}%`;
+      }
+
+      if (extraListEl) {
+        extraListEl.innerHTML = "";
+        (insights.reductionIdeas || []).forEach((idea) => {
+          const li = document.createElement("li");
+          li.textContent = idea;
+          extraListEl.appendChild(li);
+        });
+      }
+
+      if (reportEl && insights.reportText) {
+        reportEl.value = insights.reportText;
       }
     }
 
-    // Emission line items ko simple way se read kar rahe
-    // NOTE: agar tere rows ka structure alag ho to sirf selectors adjust karna padega
-    const rows =
-      document.querySelectorAll("tbody tr") ||
-      document.querySelectorAll(".emission-row");
+    // ---- Button setup ----
+    function setupAIButton() {
+      const btn = document.getElementById("ai-analyze-btn");
+      if (!btn) return;
 
-    const items = [];
-    rows.forEach((row) => {
-      const cells = row.querySelectorAll("td");
-      if (cells.length < 5) return;
+      const loadingEl = document.getElementById("ai-loading");
+      const errorEl = document.getElementById("ai-error");
 
-      const category = cells[0]?.innerText?.trim() || "";
-      const item = cells[1]?.innerText?.trim() || "";
-      const quantity = parseFloat(
-        (cells[2]?.querySelector("input")?.value || "").replace(",", "")
-      );
-      const unit = cells[3]?.innerText?.trim() || cells[3]?.querySelector("input")?.value || "";
-      const ef = parseFloat(
-        (cells[4]?.querySelector("input")?.value || "").replace(",", "")
-      );
-      const emissionsCell = cells[5] || cells[cells.length - 1];
-      const emissionsMatch = (emissionsCell?.innerText || "").match(/[0-9.]+/);
-      const emissions = emissionsMatch ? parseFloat(emissionsMatch[0]) : 0;
+      btn.disabled = false;
+      btn.classList.remove("opacity-50", "cursor-not-allowed");
 
-      if (!isNaN(quantity) && !isNaN(ef)) {
-        items.push({
-          category,
-          item,
-          quantity: quantity || 0,
-          unit,
-          ef: ef || 0,
-          emissions: emissions || 0,
-        });
-      }
-    });
+      btn.addEventListener("click", async () => {
+        const data = collectProjectDataForAI();
 
-    return { projectName, totalEmissions, items };
-  }
+        if (loadingEl) loadingEl.classList.remove("hidden");
+        if (errorEl) errorEl.classList.add("hidden");
 
-  // ---- Helper: UI update ----
-  function renderAIInsights(insights) {
-    const wrapper = document.getElementById("ai-insights-wrapper");
-    const summaryEl = document.getElementById("ai-summary");
-    const scoreTextEl = document.getElementById("ai-score-text");
-    const scoreBarEl = document.getElementById("ai-score-bar");
-    const topActionsEl = document.getElementById("ai-top-actions");
-    const alternativesEl = document.getElementById("ai-alternatives");
-    const costEl = document.getElementById("ai-cost");
-    const creditsEl = document.getElementById("ai-credits");
-    const riskEl = document.getElementById("ai-risk");
-    const extraEl = document.getElementById("ai-extra");
-    const reportEl = document.getElementById("ai-report");
+        try {
+          const res = await fetch("/api/suggest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
 
-    if (!wrapper) return;
+          if (!res.ok) {
+            throw new Error("Server error " + res.status);
+          }
 
-    wrapper.classList.remove("hidden");
-
-    summaryEl.textContent = insights.summary || "";
-
-    const score = typeof insights.sustainability_score === "number"
-      ? insights.sustainability_score
-      : 0;
-    scoreTextEl.textContent = `${score} / 100 (higher is better)`;
-    scoreBarEl.style.width = Math.min(Math.max(score, 0), 100) + "%";
-
-    function fillList(listEl, arr) {
-      listEl.innerHTML = "";
-      if (!Array.isArray(arr)) return;
-      arr.forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        listEl.appendChild(li);
+          const json = await res.json();
+          renderAIInsights(json.insights || json);
+        } catch (e) {
+          console.error(e);
+          if (errorEl) {
+            errorEl.textContent =
+              "Network or server error while calling AI suggestions.";
+            errorEl.classList.remove("hidden");
+          }
+        } finally {
+          if (loadingEl) loadingEl.classList.add("hidden");
+        }
       });
     }
 
-    fillList(topActionsEl, insights.top_reduction_actions);
-    fillList(alternativesEl, insights.alternatives);
-    fillList(extraEl, insights.extra_points);
+    // DOM load hone ke baad button setup karo
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", setupAIButton);
+    } else {
+      setupAIButton();
+    }
+  </script>
 
-    costEl.textContent = insights.cost_saving || "";
-    creditsEl.textContent = insights.carbon_credits || "";
-    riskEl.textContent = insights.risk_and_compliance || "";
-
-    // Mini report text
-    const reportText = `
-Project AI Report
------------------
-Summary:
-${insights.summary || ""}
-
-Sustainability Score: ${score} / 100
-
-Top Reduction Actions:
-- ${(insights.top_reduction_actions || []).join("\n- ")}
-
-Alternatives:
-- ${(insights.alternatives || []).join("\n- ")}
-
-Cost & Optimization:
-${insights.cost_saving || ""}
-
-Carbon Credits Strategy:
-${insights.carbon_credits || ""}
-
-Risk & Compliance:
-${insights.risk_and_compliance || ""}
-
-Extra Tips:
-- ${(insights.extra_points || []).join("\n- ")}
-    `.trim();
-
-    reportEl.value = reportText;
-  }
-
-  // ---- Main: button click handler ----
-  async function setupAIButton() {
-    const btn = document.getElementById("ai-analyze-btn");
-    if (!btn) return;
-
-    const loadingEl = document.getElementById("ai-loading");
-    const errorEl = document.getElementById("ai-error");
-
-    btn.addEventListener("click", async () => {
-      errorEl.classList.add("hidden");
-      errorEl.textContent = "";
-
-      const { projectName, totalEmissions, items } = collectProjectDataForAI();
-
-      if (!totalEmissions || totalEmissions <= 0) {
-        errorEl.textContent =
-          "Please calculate emissions first (non-zero total) before asking AI.";
-        errorEl.classList.remove("hidden");
-        return;
-      }
-
-      btn.disabled = true;
-      if (loadingEl) {
-        loadingEl.classList.remove("hidden");
-      }
-
-      try {
-        const res = await fetch("/api/suggest", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            projectName,
-            totalEmissions,
-            items,
-          }),
-        });
-
-        const json = await res.json();
-
-        if (!res.ok || !json.ok) {
-          console.error("AI error:", json);
-          errorEl.textContent =
-            json?.error || "AI request failed. Please check logs / quota.";
-          errorEl.classList.remove("hidden");
-          return;
-        }
-
-        renderAIInsights(json.insights || {});
-      } catch (e) {
-        console.error(e);
-        errorEl.textContent = "Network or server error while calling AI.";
-        errorEl.classList.remove("hidden");
-      } finally {
-        btn.disabled = false;
-        if (loadingEl) {
-          loadingEl.classList.add("hidden");
-        }
-      }
-    });
-  }
-
-  // DOM load hone ke baad button setup karo
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", setupAIButton);
-  } else {
-    setupAIButton();
-  }
-</script>
-  
-  <!-- =============== AI INSIGHTS PANEL =============== -->
-<section class="mt-10 border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="text-lg font-semibold">AI Insights for this Project</h2>
-    <button
-      id="ai-analyze-btn"
-      class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-      Generate Insights
-    </button>
-  </div>
-
-  <p class="text-xs text-gray-500 mb-3">
-    Click the button to generate AI-based insights: summary, top 3 reduction actions, alternatives,
-    cost savings, carbon credits, compliance risks, and an overall sustainability score.
-  </p>
-
-  <div id="ai-loading" class="text-sm text-gray-600 mb-3 hidden">
-    Thinking… talking to AI about your project… ⏳
-  </div>
-
-  <div id="ai-error" class="text-sm text-red-600 mb-3 hidden"></div>
-
-  <div id="ai-insights-wrapper" class="space-y-4 hidden">
-    <!-- Summary -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Summary</h3>
-      <p id="ai-summary" class="text-sm text-gray-700"></p>
+  <!-- ============= AI INSIGHTS PANEL ============= -->
+  <section class="mt-10 border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">AI Insights for this Project</h2>
+      <button
+        id="ai-analyze-btn"
+        class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled
+      >
+        Generate Insights
+      </button>
     </div>
 
-    <!-- Sustainability score -->
-    <div class="flex items-center gap-3">
+    <p class="text-xs text-gray-500 mb-3">
+      Click the button to generate AI-based insights: summary, top 3 reduction actions,
+      alternatives, cost savings, carbon credits, compliance risks, and an overall
+      sustainability score.
+    </p>
+
+    <div id="ai-loading" class="text-sm text-gray-600 mb-3 hidden">
+      Thinking… talking to AI about your project… ⏳
+    </div>
+
+    <div id="ai-error" class="text-sm text-red-600 mb-3 hidden"></div>
+
+    <div id="ai-insights-wrapper" class="space-y-4 hidden">
+      <!-- Summary -->
+      <div>
+        <h3 class="font-semibold text-sm mb-1">Summary</h3>
+        <p id="ai-summary" class="text-sm text-gray-700"></p>
+      </div>
+
+      <!-- Sustainability score -->
       <div>
         <h3 class="font-semibold text-sm mb-1">Sustainability Score</h3>
-        <div id="ai-score-text" class="text-sm text-gray-700"></div>
+        <p id="ai-score-text" class="text-sm text-gray-700"></p>
+        <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div id="ai-score-bar" class="h-2 bg-green-500" style="width: 0%"></div>
+        </div>
       </div>
-      <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div id="ai-score-bar" class="h-2 bg-green-500" style="width: 0%"></div>
+
+      <!-- Extra recommendations -->
+      <div>
+        <h3 class="font-semibold text-sm mb-1">Extra Recommendations</h3>
+        <ul
+          id="ai-extra"
+          class="list-disc list-inside text-sm text-gray-700 space-y-1"
+        ></ul>
+      </div>
+
+      <!-- Copy-paste report -->
+      <div>
+        <h3 class="font-semibold text-sm mb-1">Copy-Paste Mini Report</h3>
+        <textarea
+          id="ai-report"
+          class="w-full border border-gray-200 rounded-lg p-2 text-xs text-gray-700"
+          rows="5"
+          readonly
+        ></textarea>
+        <p class="text-xs text-gray-400 mt-1">
+          You can copy this into a PDF, email, or client report.
+        </p>
       </div>
     </div>
+  </section>
 
-    <!-- Top actions -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Top 3 Reduction Actions</h3>
-      <ul id="ai-top-actions" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
-    </div>
-
-    <!-- Alternatives -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Material / Energy Alternatives</h3>
-      <ul id="ai-alternatives" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
-    </div>
-
-    <!-- Cost savings -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Cost & Optimization</h3>
-      <p id="ai-cost" class="text-sm text-gray-700"></p>
-    </div>
-
-    <!-- Carbon credits -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Carbon Credits Strategy</h3>
-      <p id="ai-credits" class="text-sm text-gray-700"></p>
-    </div>
-
-    <!-- Risk & compliance -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Risk & Compliance</h3>
-      <p id="ai-risk" class="text-sm text-gray-700"></p>
-    </div>
-
-    <!-- Extra points / mini-report -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Extra Recommendations</h3>
-      <ul id="ai-extra" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
-    </div>
-
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Copy-Paste Mini Report</h3>
-      <textarea
-        id="ai-report"
-        class="w-full border border-gray-200 rounded-lg p-2 text-xs text-gray-700"
-        rows="5"
-        readonly
-      ></textarea>
-      <p class="text-xs text-gray-400 mt-1">
-        You can copy this into a PDF, email, or client report.
-      </p>
-    </div>
-  </div>
-</section>
-<!-- ================= END AI INSIGHTS PANEL ============== -->
 </body>
 </html>
+
