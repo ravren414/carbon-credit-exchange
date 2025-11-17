@@ -10,47 +10,41 @@ export default async function handler(req, res) {
     const totalEmissions = body.totalEmissions || 0;
     const items = body.items || [];
 
-    const prompt = `
+   const prompt = `
 You are a senior carbon consultant for construction projects.
 
-You will receive:
-- projectName (string)
-- totalEmissions (number, in tCO2e)
-- items: array of { category, item, quantity, unit, ef, emissions }
-
-DATA:
-${JSON.stringify({ projectName, totalEmissions, items }, null, 2)}
-
-TASK:
-Analyze this project and return a **strict JSON object only** (no extra text, no markdown) with this exact shape:
-
+You will receive this JSON:
 {
-  "summary": "1 short paragraph explaining total emissions, main drivers, and overall profile.",
-  "top_reduction_actions": [
-    "Action 1 (with approx % or tCO2e reduction)",
-    "Action 2",
-    "Action 3"
-  ],
-  "alternatives": [
-    "Material/energy alternative 1",
-    "Material/energy alternative 2",
-    "Material/transport alternative 3"
-  ],
-  "cost_saving": "1 paragraph on cheapest reduction options and rough cost/benefit.",
-  "carbon_credits": "1 paragraph on how many credits to buy, approximate cost range, and what type of projects (renewables, forestry, etc.).",
-  "risk_and_compliance": "1 paragraph on regulatory / ESG risks and how this project scores.",
-  "sustainability_score": 0-100,
-  "extra_points": [
-    "Any extra recommendation in one line",
-    "Another useful tip"
+  "projectName": string,
+  "totalEmissions": number,       // in tCO2e
+  "items": [
+    { "category": string, "item": string, "quantity": number, "unit": string, "ef": number, "emissions": number }
   ]
 }
 
+Here is the data:
+${JSON.stringify({ projectName, totalEmissions, items }, null, 2)}
+
+Based ONLY on this data, respond with a single JSON object in EXACTLY this format:
+
+{
+  "summary": "2–4 sentence high-level summary of the emissions profile.",
+  "sustainabilityScore": 0-100,
+  "sustainabilityLabel": "Poor | Fair | Good | Excellent",
+  "sustainabilityExplanation": "1 short paragraph explaining why you gave that score.",
+  "extraRecommendations": [
+    "Action 1 (max 20 words)",
+    "Action 2 (max 20 words)",
+    "Action 3 (max 20 words)"
+  ],
+  "miniReport": "Short, client-ready mini report (5–8 sentences, plain text)."
+}
+
 Rules:
-- ALWAYS send valid JSON.
-- sustainability_score must be a NUMBER (no % sign).
-- Do NOT wrap JSON in backticks.
+- Output valid JSON only.
+- Do not include any backticks, markdown, or extra text.
 `;
+
 
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
