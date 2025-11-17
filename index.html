@@ -257,97 +257,7 @@
   // Auto recalc on input changes
   creditsPurchasedInput.addEventListener("input", recalc);
   carbonPriceInput.addEventListener("input", recalc);
-<!-- =============== AI INSIGHTS PANEL =============== -->
-<section class="mt-10 border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="text-lg font-semibold">AI Insights for this Project</h2>
-    <button
-      id="ai-analyze-btn"
-      class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
-      Generate Insights
-    </button>
-  </div>
 
-  <p class="text-xs text-gray-500 mb-3">
-    Click the button to generate AI-based insights: summary, top 3 reduction actions, alternatives,
-    cost savings, carbon credits, compliance risks, and an overall sustainability score.
-  </p>
-
-  <div id="ai-loading" class="text-sm text-gray-600 mb-3 hidden">
-    Thinking… talking to AI about your project… ⏳
-  </div>
-
-  <div id="ai-error" class="text-sm text-red-600 mb-3 hidden"></div>
-
-  <div id="ai-insights-wrapper" class="space-y-4 hidden">
-    <!-- Summary -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Summary</h3>
-      <p id="ai-summary" class="text-sm text-gray-700"></p>
-    </div>
-
-    <!-- Sustainability score -->
-    <div class="flex items-center gap-3">
-      <div>
-        <h3 class="font-semibold text-sm mb-1">Sustainability Score</h3>
-        <div id="ai-score-text" class="text-sm text-gray-700"></div>
-      </div>
-      <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div id="ai-score-bar" class="h-2 bg-green-500" style="width: 0%"></div>
-      </div>
-    </div>
-
-    <!-- Top actions -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Top 3 Reduction Actions</h3>
-      <ul id="ai-top-actions" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
-    </div>
-
-    <!-- Alternatives -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Material / Energy Alternatives</h3>
-      <ul id="ai-alternatives" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
-    </div>
-
-    <!-- Cost savings -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Cost & Optimization</h3>
-      <p id="ai-cost" class="text-sm text-gray-700"></p>
-    </div>
-
-    <!-- Carbon credits -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Carbon Credits Strategy</h3>
-      <p id="ai-credits" class="text-sm text-gray-700"></p>
-    </div>
-
-    <!-- Risk & compliance -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Risk & Compliance</h3>
-      <p id="ai-risk" class="text-sm text-gray-700"></p>
-    </div>
-
-    <!-- Extra points / mini-report -->
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Extra Recommendations</h3>
-      <ul id="ai-extra" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
-    </div>
-
-    <div>
-      <h3 class="font-semibold text-sm mb-1">Copy-Paste Mini Report</h3>
-      <textarea
-        id="ai-report"
-        class="w-full border border-gray-200 rounded-lg p-2 text-xs text-gray-700"
-        rows="5"
-        readonly
-      ></textarea>
-      <p class="text-xs text-gray-400 mt-1">
-        You can copy this into a PDF, email, or client report.
-      </p>
-    </div>
-  </div>
-</section>
-<!-- ================= END AI INSIGHTS PANEL ============== -->
 <script>
   // ---- Helper: project data collect karo ----
   function collectProjectDataForAI() {
@@ -558,5 +468,96 @@ Extra Tips:
   }
 </script>
   </script>
+  <!-- =============== AI INSIGHTS PANEL =============== -->
+<section class="mt-10 border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold">AI Insights for this Project</h2>
+    <button
+      id="ai-analyze-btn"
+      class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+      Generate Insights
+    </button>
+  </div>
+
+  <p class="text-xs text-gray-500 mb-3">
+    Click the button to generate AI-based insights: summary, top 3 reduction actions, alternatives,
+    cost savings, carbon credits, compliance risks, and an overall sustainability score.
+  </p>
+
+  <div id="ai-loading" class="text-sm text-gray-600 mb-3 hidden">
+    Thinking… talking to AI about your project… ⏳
+  </div>
+
+  <div id="ai-error" class="text-sm text-red-600 mb-3 hidden"></div>
+
+  <div id="ai-insights-wrapper" class="space-y-4 hidden">
+    <!-- Summary -->
+    <div>
+      <h3 class="font-semibold text-sm mb-1">Summary</h3>
+      <p id="ai-summary" class="text-sm text-gray-700"></p>
+    </div>
+
+    <!-- Sustainability score -->
+    <div class="flex items-center gap-3">
+      <div>
+        <h3 class="font-semibold text-sm mb-1">Sustainability Score</h3>
+        <div id="ai-score-text" class="text-sm text-gray-700"></div>
+      </div>
+      <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div id="ai-score-bar" class="h-2 bg-green-500" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Top actions -->
+    <div>
+      <h3 class="font-semibold text-sm mb-1">Top 3 Reduction Actions</h3>
+      <ul id="ai-top-actions" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
+    </div>
+
+    <!-- Alternatives -->
+    <div>
+      <h3 class="font-semibold text-sm mb-1">Material / Energy Alternatives</h3>
+      <ul id="ai-alternatives" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
+    </div>
+
+    <!-- Cost savings -->
+    <div>
+      <h3 class="font-semibold text-sm mb-1">Cost & Optimization</h3>
+      <p id="ai-cost" class="text-sm text-gray-700"></p>
+    </div>
+
+    <!-- Carbon credits -->
+    <div>
+      <h3 class="font-semibold text-sm mb-1">Carbon Credits Strategy</h3>
+      <p id="ai-credits" class="text-sm text-gray-700"></p>
+    </div>
+
+    <!-- Risk & compliance -->
+    <div>
+      <h3 class="font-semibold text-sm mb-1">Risk & Compliance</h3>
+      <p id="ai-risk" class="text-sm text-gray-700"></p>
+    </div>
+
+    <!-- Extra points / mini-report -->
+    <div>
+      <h3 class="font-semibold text-sm mb-1">Extra Recommendations</h3>
+      <ul id="ai-extra" class="list-disc list-inside text-sm text-gray-700 space-y-1"></ul>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-sm mb-1">Copy-Paste Mini Report</h3>
+      <textarea
+        id="ai-report"
+        class="w-full border border-gray-200 rounded-lg p-2 text-xs text-gray-700"
+        rows="5"
+        readonly
+      ></textarea>
+      <p class="text-xs text-gray-400 mt-1">
+        You can copy this into a PDF, email, or client report.
+      </p>
+    </div>
+  </div>
+</section>
+<!-- ================= END AI INSIGHTS PANEL ============== -->
 </body>
 </html>
