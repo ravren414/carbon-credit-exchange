@@ -259,155 +259,51 @@
     carbonPriceInput.addEventListener("input", recalc);
 
     // ---- Helper: project data collect karo ----
-    function collectProjectDataForAI() {
-      // Project name input
-      const projectNameInput =
-        document.getElementById("projectName") ||
-        document.querySelector("input[placeholder='Campus Block A']") ||
-        document.querySelector("input");
+function collectProjectDataForAI() {
+  // Project name
+  const projectNameInput =
+    document.getElementById("projectName") ||
+    document.querySelector('input[placeholder="e.g., UAB Campus Block A"]') ||
+    document.querySelector("input");
 
-      const projectName =
-        (projectNameInput && projectNameInput.value.trim()) ||
-        "Untitled Project";
+  const projectName = (projectNameInput?.value || "Untitled Project").trim();
 
-      // Total emissions card se number nikaalna
-      const totalEl =
-        document.getElementById("totalEmissionsValue") ||
-        document.querySelector("[data-total-emissions]");
-      let totalEmissions = 0;
+  // Emission line items – sirf .emission-row se uthana
+  const rows = document.querySelectorAll(".emission-row");
+  const items = [];
+  let totalEmissions = 0;
 
-      if (totalEl) {
-        const text = totalEl.innerText || totalEl.textContent || "";
-        const match = text.replace(",", "").match(/[\d.]+/);
-        if (match) totalEmissions = parseFloat(match[0]) || 0;
-      }
+  rows.forEach((row) => {
+    const category = row.querySelector(".category-select")?.value || "";
+    const item = row.querySelector(".item-select")?.value || "";
+    const qty = parseFloat(row.querySelector(".qty-input")?.value) || 0;
+    const unit = row.querySelector(".unit-input")?.value || "";
+    const ef = parseFloat(row.querySelector(".ef-input")?.value) || 0;
 
-      // Emission line items rows
-      const rows =
-        document.querySelectorAll("tbody tr") ||
-        document.querySelectorAll(".emission-row");
+    const emissionText =
+      row.querySelector(".emission-value")?.textContent?.trim() || "0";
+    const emission = parseFloat(emissionText.replace(/,/g, "")) || 0;
 
-      const items = [];
+    totalEmissions += emission;
 
-      rows.forEach((row) => {
-        const categoryEl = row.querySelector(".category-select, select");
-        const itemEl = row.querySelector(".item-input, input[type='text']");
-        const qtyEl = row.querySelector(".qty-input, input[type='number']");
-        const unitEl = row.querySelector(".unit-input, select.unit-select");
-        const efEl = row.querySelector(".ef-input, input[data-ef]");
-        const emisEl = row.querySelector(".emissions-cell");
-
-        const category = categoryEl ? categoryEl.value || categoryEl.textContent : "";
-        const item = itemEl ? itemEl.value || itemEl.textContent : "";
-        const quantity = qtyEl ? parseFloat(qtyEl.value) || 0 : 0;
-        const unit = unitEl ? unitEl.value || unitEl.textContent : "";
-        const ef = efEl ? parseFloat(efEl.value) || 0 : 0;
-        const emissions = emisEl
-          ? parseFloat(
-              (emisEl.innerText || emisEl.textContent || "0").replace(",", "")
-            ) || 0
-          : 0;
-
-        if (category || item || quantity || emissions) {
-          items.push({ category, item, quantity, unit, ef, emissions });
-        }
-      });
-
-      return { projectName, totalEmissions, items };
-    }
-
-    // ---- AI insights render helper ----
-    function renderAIInsights(insights) {
-      const loadingEl = document.getElementById("ai-loading");
-      const errorEl = document.getElementById("ai-error");
-      const wrapperEl = document.getElementById("ai-insights-wrapper");
-      const summaryEl = document.getElementById("ai-summary");
-      const scoreTextEl = document.getElementById("ai-score-text");
-      const scoreBarEl = document.getElementById("ai-score-bar");
-      const extraListEl = document.getElementById("ai-extra");
-      const reportEl = document.getElementById("ai-report");
-
-      if (!insights) insights = {};
-
-      if (loadingEl) loadingEl.classList.add("hidden");
-      if (errorEl) errorEl.classList.add("hidden");
-      if (wrapperEl) wrapperEl.classList.remove("hidden");
-
-      if (summaryEl && insights.summary) summaryEl.textContent = insights.summary;
-
-      if (scoreTextEl && typeof insights.score === "number") {
-        scoreTextEl.textContent = `${insights.score} / 100`;
-      }
-
-      if (scoreBarEl && typeof insights.score === "number") {
-        const clamped = Math.max(0, Math.min(100, insights.score));
-        scoreBarEl.style.width = `${clamped}%`;
-      }
-
-      if (extraListEl) {
-        extraListEl.innerHTML = "";
-        (insights.reductionIdeas || []).forEach((idea) => {
-          const li = document.createElement("li");
-          li.textContent = idea;
-          extraListEl.appendChild(li);
-        });
-      }
-
-      if (reportEl && insights.reportText) {
-        reportEl.value = insights.reportText;
-      }
-    }
-
-    // ---- Button setup ----
-    function setupAIButton() {
-      const btn = document.getElementById("ai-analyze-btn");
-      if (!btn) return;
-
-      const loadingEl = document.getElementById("ai-loading");
-      const errorEl = document.getElementById("ai-error");
-
-      btn.disabled = false;
-      btn.classList.remove("opacity-50", "cursor-not-allowed");
-
-      btn.addEventListener("click", async () => {
-        const data = collectProjectDataForAI();
-
-        if (loadingEl) loadingEl.classList.remove("hidden");
-        if (errorEl) errorEl.classList.add("hidden");
-
-        try {
-          const res = await fetch("/api/suggest", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
-
-          if (!res.ok) {
-            throw new Error("Server error " + res.status);
-          }
-
-          const json = await res.json();
-          renderAIInsights(json.insights || json);
-        } catch (e) {
-          console.error(e);
-          if (errorEl) {
-            errorEl.textContent =
-              "Network or server error while calling AI suggestions.";
-            errorEl.classList.remove("hidden");
-          }
-        } finally {
-          if (loadingEl) loadingEl.classList.add("hidden");
-        }
+    if (category || item || emission > 0) {
+      items.push({
+        category,
+        item,
+        quantity: qty,
+        unit,
+        ef,
+        emissions: emission,
       });
     }
+  });
 
-    // DOM load hone ke baad button setup karo
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", setupAIButton);
-    } else {
-      setupAIButton();
-    }
-  </script>
+  return {
+    projectName,
+    totalEmissions,
+    items,
+  };
+}
 
   <!-- ============= AI INSIGHTS PANEL ============= -->
   <section class="mt-10 border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
