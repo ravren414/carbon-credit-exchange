@@ -421,11 +421,24 @@ function renderAIInsights(insights) {
         if (errorEl) errorEl.classList.add("hidden");
 
         try {
-          const res = await fetch("/api/suggest", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
+         // Decide API base depending on where we are running
+const isLocal =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+
+const API_BASE = isLocal
+  ? "https://carbon-credit-exchange-bt0whuh40-ravren414s-projects.vercel.app" // 👉 apna exact Vercel URL
+  : "";
+
+// Debug dekhne ke liye
+console.log("Calling API at:", `${API_BASE}/api/suggest`);
+
+const res = await fetch(`${API_BASE}/api/suggest`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(data),
+});
+
 
           if (!res.ok) {
             throw new Error("Server error " + res.status);
