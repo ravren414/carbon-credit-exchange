@@ -346,47 +346,62 @@ function collectProjectDataForAI() {
   return { projectName, totalEmissions, items };
 }
 
-    // ---- AI insights render helper ----
-    function renderAIInsights(insights) {
-      const loadingEl = document.getElementById("ai-loading");
-      const errorEl = document.getElementById("ai-error");
-      const wrapperEl = document.getElementById("ai-insights-wrapper");
-      const summaryEl = document.getElementById("ai-summary");
-      const scoreTextEl = document.getElementById("ai-score-text");
-      const scoreBarEl = document.getElementById("ai-score-bar");
-      const extraListEl = document.getElementById("ai-extra");
-      const reportEl = document.getElementById("ai-report");
+  // ---- AI insights render helper ----
+function renderAIInsights(insights) {
+  const loadingEl = document.getElementById("ai-loading");
+  const errorEl = document.getElementById("ai-error");
+  const wrapperEl = document.getElementById("ai-insights-wrapper");
+  const summaryEl = document.getElementById("ai-summary");
+  const scoreTextEl = document.getElementById("ai-score-text");
+  const scoreBarEl = document.getElementById("ai-score-bar");
+  const extraListEl = document.getElementById("ai-extra");
+  const reportEl = document.getElementById("ai-report");
 
-      if (!insights) insights = {};
+  if (!insights) insights = {};
 
-      if (loadingEl) loadingEl.classList.add("hidden");
-      if (errorEl) errorEl.classList.add("hidden");
-      if (wrapperEl) wrapperEl.classList.remove("hidden");
+  console.log("AI INSIGHTS:", insights);
 
-      if (summaryEl && insights.summary) summaryEl.textContent = insights.summary;
+  if (loadingEl) loadingEl.classList.add("hidden");
+  if (errorEl) errorEl.classList.add("hidden");
+  if (wrapperEl) wrapperEl.classList.remove("hidden");
 
-      if (scoreTextEl && typeof insights.score === "number") {
-        scoreTextEl.textContent = `${insights.score} / 100`;
-      }
+  if (summaryEl && insights.summary) {
+    summaryEl.textContent = insights.summary;
+  }
 
-      if (scoreBarEl && typeof insights.score === "number") {
-        const clamped = Math.max(0, Math.min(100, insights.score));
-        scoreBarEl.style.width = `${clamped}%`;
-      }
+  const score =
+    typeof insights.sustainability_score === "number"
+      ? insights.sustainability_score
+      : typeof insights.score === "number"
+      ? insights.score
+      : null;
 
-      if (extraListEl) {
-        extraListEl.innerHTML = "";
-        (insights.reductionIdeas || []).forEach((idea) => {
-          const li = document.createElement("li");
-          li.textContent = idea;
-          extraListEl.appendChild(li);
-        });
-      }
+  if (scoreTextEl && score !== null) {
+    scoreTextEl.textContent = `${score} / 100`;
+  }
 
-      if (reportEl && insights.reportText) {
-        reportEl.value = insights.reportText;
-      }
-    }
+  if (scoreBarEl && score !== null) {
+    const clamped = Math.max(0, Math.min(100, score));
+    scoreBarEl.style.width = `${clamped}%`;
+  }
+
+  const extraPoints = insights.extra_points || insights.reductionIdeas || [];
+
+  if (extraListEl) {
+    extraListEl.innerHTML = "";
+    extraPoints.forEach((idea) => {
+      const li = document.createElement("li");
+      li.textContent = idea;
+      extraListEl.appendChild(li);
+    });
+  }
+
+  const reportText = insights.mini_report || insights.reportText || "";
+
+  if (reportEl) {
+    reportEl.value = reportText;
+  }
+}
 
     // ---- Button setup ----
     function setupAIButton() {
