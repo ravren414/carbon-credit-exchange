@@ -403,36 +403,57 @@ function renderAIInsights(insights) {
   }
 }
 
-    // ---- Button setup ----
-    function setupAIButton() {
-      const btn = document.getElementById("ai-analyze-btn");
-      if (!btn) return;
+   // ---- Button setup ----
+function setupAIButton() {
+  const btn = document.getElementById("ai-analyze-btn");
+  if (!btn) return;
 
-      const loadingEl = document.getElementById("ai-loading");
-      const errorEl = document.getElementById("ai-error");
+  const loadingEl = document.getElementById("ai-loading");
+  const errorEl = document.getElementById("ai-error");
 
-      btn.disabled = false;
-      btn.classList.remove("opacity-50", "cursor-not-allowed");
+  // Enable button (just in case)
+  btn.disabled = false;
+  btn.classList.remove("opacity-50", "cursor-not-allowed");
 
-      btn.addEventListener("click", async () => {
-        const data = collectProjectDataForAI();
+  btn.addEventListener("click", async () => {
+    const data = collectProjectDataForAI();
 
-        if (loadingEl) loadingEl.classList.remove("hidden");
-        if (errorEl) errorEl.classList.add("hidden");
+    if (loadingEl) loadingEl.classList.remove("hidden");
+    if (errorEl) errorEl.classList.add("hidden");
 
-        try {
-        
-const API_URL =
-  "https://carbon-credit-exchange-bt0whuh40-ravren414s-projects.vercel.app/api/suggest";
+    // 🔥 HAMESHA VERCEL BACKEND KO HIT KARO
+    const API_URL =
+      "https://carbon-credit-exchange-bt0whuh40-ravren414s-projects.vercel.app/api/suggest";
 
-console.log("Calling API at:", API_URL);
+    console.log("Calling API at:", API_URL);
 
-const res = await fetch(API_URL, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(data),
-});
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
+      if (!res.ok) {
+        console.error("Server responded with:", res.status, res.statusText);
+        throw new Error("Server error " + res.status);
+      }
+
+      const json = await res.json();
+      console.log("API response:", json);
+      renderAIInsights(json.insights || json);
+    } catch (e) {
+      console.error("Fetch error:", e);
+      if (errorEl) {
+        errorEl.textContent =
+          "Network or server error while calling AI suggestions.";
+        errorEl.classList.remove("hidden");
+      }
+    } finally {
+      if (loadingEl) loadingEl.classList.add("hidden");
+    }
+  });
+}
 
           if (!res.ok) {
             throw new Error("Server error " + res.status);
