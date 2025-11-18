@@ -403,57 +403,42 @@ function renderAIInsights(insights) {
   }
 }
 
-   // ---- Button setup ----
-function setupAIButton() {
-  const btn = document.getElementById("ai-analyze-btn");
-  if (!btn) return;
+    // ---- Button setup ----
+    function setupAIButton() {
+      const btn = document.getElementById("ai-analyze-btn");
+      if (!btn) return;
 
-  const loadingEl = document.getElementById("ai-loading");
-  const errorEl = document.getElementById("ai-error");
+      const loadingEl = document.getElementById("ai-loading");
+      const errorEl = document.getElementById("ai-error");
 
-  // Enable button (just in case)
-  btn.disabled = false;
-  btn.classList.remove("opacity-50", "cursor-not-allowed");
+      btn.disabled = false;
+      btn.classList.remove("opacity-50", "cursor-not-allowed");
 
-  btn.addEventListener("click", async () => {
-    const data = collectProjectDataForAI();
+      btn.addEventListener("click", async () => {
+        const data = collectProjectDataForAI();
 
-    if (loadingEl) loadingEl.classList.remove("hidden");
-    if (errorEl) errorEl.classList.add("hidden");
+        if (loadingEl) loadingEl.classList.remove("hidden");
+        if (errorEl) errorEl.classList.add("hidden");
 
-    // 🔥 HAMESHA VERCEL BACKEND KO HIT KARO
-    const API_URL =
-      "https://carbon-credit-exchange-bt0whuh40-ravren414s-projects.vercel.app/api/suggest";
+        try {
+         // Decide API base depending on where we are running
+const isLocal =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
 
-    console.log("Calling API at:", API_URL);
+const API_BASE = isLocal
+  ? "https://carbon-credit-exchange-bt0whuh40-ravren414s-projects.vercel.app" // 👉 apna exact Vercel URL
+  : "";
 
-    try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+// Debug dekhne ke liye
+console.log("Calling API at:", `${API_BASE}/api/suggest`);
 
-      if (!res.ok) {
-        console.error("Server responded with:", res.status, res.statusText);
-        throw new Error("Server error " + res.status);
-      }
+const res = await fetch(`${API_BASE}/api/suggest`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(data),
+});
 
-      const json = await res.json();
-      console.log("API response:", json);
-      renderAIInsights(json.insights || json);
-    } catch (e) {
-      console.error("Fetch error:", e);
-      if (errorEl) {
-        errorEl.textContent =
-          "Network or server error while calling AI suggestions.";
-        errorEl.classList.remove("hidden");
-      }
-    } finally {
-      if (loadingEl) loadingEl.classList.add("hidden");
-    }
-  });
-}
 
           if (!res.ok) {
             throw new Error("Server error " + res.status);
